@@ -1,0 +1,23 @@
+{
+  "name": "codelicia/xulieta-auto-plugin",
+  "description": "Xulieta Plugin for supporting of Literate programming",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Jefersson Nathan",
+      "email": "malukenho.dev@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Codelicia\\Xulieta\\AutoPlugin\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.0",
+    "composer/composer": "^2.1"
+  },
+  "scripts": {
+    "post-update-cmd": "Codelicia\\Xulieta\\AutoPlugin\\Register::scan"
+  }
+}
