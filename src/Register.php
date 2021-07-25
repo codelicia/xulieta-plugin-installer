@@ -16,24 +16,7 @@ use Composer\Package\RootPackageInterface;
 use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
-use Generator;
-
 use JetBrains\PhpStorm\ArrayShape;
-use function array_key_exists;
-use function array_merge;
-use function file_exists;
-use function file_get_contents;
-use function file_put_contents;
-use function is_numeric;
-use function iterator_to_array;
-use function pathinfo;
-use function preg_match;
-use function sprintf;
-use function strpos;
-use function substr;
-use function trim;
-
-use const PATHINFO_EXTENSION;
 
 final class Register implements PluginInterface, EventSubscriberInterface
 {
