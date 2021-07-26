@@ -15,9 +15,11 @@
   },
   "require": {
     "php": ">=8.0",
-    "composer/composer": "^2.1"
+    "ext-dom": "*",
+    "composer/composer": "^2.1",
+    "symfony/config": "^5.3"
   },
   "scripts": {
-    "post-update-cmd": "Codelicia\\Xulieta\\AutoPlugin\\Register::scan"
+    "post-package-install": "Codelicia\\Xulieta\\AutoPlugin\\Register::scan"
   }
 }
