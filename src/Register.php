@@ -10,14 +10,8 @@ use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Installer\PackageEvent;
 use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
-use Composer\Json\JsonFile;
-use Composer\Json\JsonManipulator;
-use Composer\Package\Link;
-use Composer\Package\Locker;
-use Composer\Package\RootPackageInterface;
 use Composer\Plugin\PluginInterface;
-use Composer\Script\Event;
-use Composer\Script\ScriptEvents;
+use DOMDocument;
 use Symfony\Component\Config\Util\XmlUtils;
 
 /**
@@ -44,14 +38,6 @@ use Symfony\Component\Config\Util\XmlUtils;
  */
 final class Register implements PluginInterface, EventSubscriberInterface
 {
-    private Composer $composer;
-    private IOInterface $io;
-
-    public function activate(Composer $composer, IOInterface $io)
-    {
-        $this->composer = $composer;
-        $this->io = $io;
-    }
 
     public static function scan(PackageEvent $event): void
     {
@@ -68,15 +54,10 @@ final class Register implements PluginInterface, EventSubscriberInterface
         $packageExtra = $package->getExtra();
         $extra = self::getExtraMetadata($packageExtra);
 
-//        if (empty($extra)) {
-        // Package does not define anything of interest; do nothing.
-//            return;
-//        }
-
-        $extra = [
-            "parser"    => ["Malukenho\\QuoPrimumTempore\\JsonParser"],
-            "validator" => ["Malukenho\\QuoPrimumTempore\\JsonValidator"],
-        ];
+        if (empty($extra)) {
+            // Package does not define anything of interest; do nothing.
+            return;
+        }
 
         self::injectModuleIntoConfig($extra, $event->getIO(), $event->getComposer());
     }
@@ -105,49 +86,60 @@ final class Register implements PluginInterface, EventSubscriberInterface
         $rootDir = dirname($composer->getConfig()->getConfigSource()->getName());
         $xulietaConfigFile = $rootDir . '/xulieta.xml';
 
+        // @todo create basic config file in case it doesn't exists?
         if (! file_exists($xulietaConfigFile)) {
             return;
         }
-
 
         // FIXME: Filter elements so it doesn't get repeated
         $xml = XmlUtils::loadFile($xulietaConfigFile);
         $root = $xml->documentElement;
 
-        $xml->preserveWhiteSpace = true;
-        $xml->formatOutput = true;
-
         $parsers = $root->getElementsByTagName('parser');
         $a = [];
+        /** @var \DOMElement $registeredParsers */
         foreach ($parsers->getIterator() as $registeredParsers) {
             $a[] = $registeredParsers->textContent;
         }
 
+        // @todo refactor to functional
         foreach ($extra['parser'] as $toBeRegistered) {
             if (in_array($toBeRegistered, $a, true)) {
                 continue;
             }
 
-            $parser = $xml->createElement('parser', $toBeRegistered);
-            $root->appendChild($parser);
+            $registeredParsers->parentNode->insertBefore(
+                $xml->createElement('parser', $toBeRegistered),
+                $registeredParsers
+            );
         }
 
         $validators = $root->getElementsByTagName('validator');
         $b = [];
+
+        /** @var \DOMElement $registeredValidators */
         foreach ($validators->getIterator() as $registeredValidators) {
             $b[] = $registeredValidators->textContent;
         }
 
+        // @todo poorly duplicated code
         foreach ($extra['validator'] as $toBeRegistered) {
             if (in_array($toBeRegistered, $b, true)) {
                 continue;
             }
 
-            $validator = $xml->createElement('validator', $toBeRegistered);
-            $root->appendChild($validator);
+            $registeredValidators->parentNode->insertBefore(
+                $xml->createElement('validator', $toBeRegistered),
+                $registeredValidators
+            );
         }
 
-        $xml->save($xulietaConfigFile);
+        // @fixme: workaround to save properly formatted xml
+        $domxml = new DOMDocument('1.0');
+        $domxml->preserveWhiteSpace = false;
+        $domxml->formatOutput = true;
+        $domxml->loadXML($xml->saveXML());
+        $domxml->save($xulietaConfigFile);
 
         $io->write('Updating file...');
     }
@@ -156,8 +148,6 @@ final class Register implements PluginInterface, EventSubscriberInterface
     {
         return [
             PackageEvents::POST_PACKAGE_INSTALL   => 'onPostPackageInstall',
-            PackageEvents::POST_PACKAGE_UPDATE    => 'onPostPackageUpdate',
-            PackageEvents::POST_PACKAGE_UNINSTALL => 'onPostPackageUninstall',
         ];
     }
 
@@ -167,6 +157,11 @@ final class Register implements PluginInterface, EventSubscriberInterface
     }
 
     public function uninstall(Composer $composer, IOInterface $io)
+    {
+        // TODO: Implement uninstall() method.
+    }
+
+    public function activate(Composer $composer, IOInterface $io)
     {
         // TODO: Implement uninstall() method.
     }
