@@ -108,9 +108,9 @@ final class Register implements PluginInterface, EventSubscriberInterface
                 continue;
             }
 
-            $registeredParsers->parentNode->insertBefore(
+            $registeredParsers?->parentNode?->insertBefore(
                 $xml->createElement('parser', $toBeRegistered),
-                $registeredParsers
+                $registeredParsers ?? null
             );
         }
 
@@ -130,7 +130,7 @@ final class Register implements PluginInterface, EventSubscriberInterface
 
             $registeredValidators->parentNode->insertBefore(
                 $xml->createElement('validator', $toBeRegistered),
-                $registeredValidators
+                $registeredValidators ?? null
             );
         }
 
