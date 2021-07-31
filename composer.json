@@ -16,8 +16,13 @@
   "require": {
     "php": ">=8.0",
     "ext-dom": "*",
-    "composer/composer": "^2.1",
-    "symfony/config": "^5.3"
+    "composer/composer": "^2.1.5",
+    "symfony/config": "^v5.3.4"
+  },
+  "require-dev": {
+    "vimeo/psalm": "^4.8.1",
+    "malukenho/mcbumpface": "^1.1.5",
+    "doctrine/coding-standard": "^9.0.0"
   },
   "scripts": {
     "post-package-install": "Codelicia\\Xulieta\\AutoPlugin\\Register::scan"
