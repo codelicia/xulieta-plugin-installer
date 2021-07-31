@@ -12,7 +12,14 @@ use Composer\Installer\PackageEvents;
 use Composer\IO\IOInterface;
 use Composer\Plugin\PluginInterface;
 use DOMDocument;
+use DOMElement;
 use Symfony\Component\Config\Util\XmlUtils;
+
+use function assert;
+use function dirname;
+use function file_exists;
+use function in_array;
+use function is_array;
 
 /**
  * Based on https://github.com/laminas/laminas-component-installer/blob/2.5.x/src/ComponentInstaller.php
@@ -38,7 +45,6 @@ use Symfony\Component\Config\Util\XmlUtils;
  */
 final class Register implements PluginInterface, EventSubscriberInterface
 {
-
     public static function scan(PackageEvent $event): void
     {
         if (! $event->isDevMode()) {
@@ -48,11 +54,10 @@ final class Register implements PluginInterface, EventSubscriberInterface
         $operation = $event->getOperation();
         assert($operation instanceof InstallOperation);
         $package = $operation->getPackage();
-        $name = $package->getName();
 
         /** @var array<string,mixed> $packageExtra */
         $packageExtra = $package->getExtra();
-        $extra = self::getExtraMetadata($packageExtra);
+        $extra        = self::getExtraMetadata($packageExtra);
 
         if (empty($extra)) {
             // Package does not define anything of interest; do nothing.
@@ -83,7 +88,7 @@ final class Register implements PluginInterface, EventSubscriberInterface
 
     private static function injectModuleIntoConfig(array $extra, IOInterface $io, Composer $composer): void
     {
-        $rootDir = dirname($composer->getConfig()->getConfigSource()->getName());
+        $rootDir           = dirname($composer->getConfig()->getConfigSource()->getName());
         $xulietaConfigFile = $rootDir . '/xulieta.xml';
 
         // @todo create basic config file in case it doesn't exists?
@@ -92,13 +97,13 @@ final class Register implements PluginInterface, EventSubscriberInterface
         }
 
         // FIXME: Filter elements so it doesn't get repeated
-        $xml = XmlUtils::loadFile($xulietaConfigFile);
+        $xml  = XmlUtils::loadFile($xulietaConfigFile);
         $root = $xml->documentElement;
 
         $parsers = $root->getElementsByTagName('parser');
-        $a = [];
-        /** @var \DOMElement $registeredParsers */
+        $a       = [];
         foreach ($parsers->getIterator() as $registeredParsers) {
+            assert($registeredParsers instanceof DOMElement);
             $a[] = $registeredParsers->textContent;
         }
 
@@ -115,10 +120,10 @@ final class Register implements PluginInterface, EventSubscriberInterface
         }
 
         $validators = $root->getElementsByTagName('validator');
-        $b = [];
+        $b          = [];
 
-        /** @var \DOMElement $registeredValidators */
         foreach ($validators->getIterator() as $registeredValidators) {
+            assert($registeredValidators instanceof DOMElement);
             $b[] = $registeredValidators->textContent;
         }
 
@@ -135,9 +140,9 @@ final class Register implements PluginInterface, EventSubscriberInterface
         }
 
         // @fixme: workaround to save properly formatted xml
-        $domxml = new DOMDocument('1.0');
+        $domxml                     = new DOMDocument('1.0');
         $domxml->preserveWhiteSpace = false;
-        $domxml->formatOutput = true;
+        $domxml->formatOutput       = true;
         $domxml->loadXML($xml->saveXML());
         $domxml->save($xulietaConfigFile);
 
@@ -146,23 +151,24 @@ final class Register implements PluginInterface, EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
-        return [
-            PackageEvents::POST_PACKAGE_INSTALL   => 'onPostPackageInstall',
-        ];
+        return [PackageEvents::POST_PACKAGE_INSTALL => 'onPostPackageInstall'];
     }
 
+    /** @return void */
     public function deactivate(Composer $composer, IOInterface $io)
     {
-        // TODO: Implement deactivate() method.
+        // Intentionally left blank
     }
 
+    /** @return void */
     public function uninstall(Composer $composer, IOInterface $io)
     {
-        // TODO: Implement uninstall() method.
+        // Intentionally left blank
     }
 
+    /** @return void */
     public function activate(Composer $composer, IOInterface $io)
     {
-        // TODO: Implement uninstall() method.
+        // Intentionally left blank
     }
 }
