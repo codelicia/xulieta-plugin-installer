@@ -20,10 +20,10 @@
     "symfony/config": "^v5.3.4"
   },
   "require-dev": {
-    "roave/security-advisories": "dev-latest",
-    "vimeo/psalm": "^4.8.1",
+    "doctrine/coding-standard": "^9.0.0",
     "malukenho/mcbumpface": "^1.1.5",
-    "doctrine/coding-standard": "^9.0.0"
+    "roave/security-advisories": "dev-latest",
+    "vimeo/psalm": "^4.9.1"
   },
   "scripts": {
     "post-package-install": "Codelicia\\Xulieta\\AutoPlugin\\Register::scan"
