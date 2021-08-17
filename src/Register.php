@@ -42,6 +42,8 @@ use function is_array;
  *   }
  * }
  * </code>
+ *
+ * @internal
  */
 final class Register implements PluginInterface, EventSubscriberInterface
 {
@@ -70,20 +72,20 @@ final class Register implements PluginInterface, EventSubscriberInterface
     /**
      * Retrieve the metadata from the "extra" section
      *
-     * @param array<string,mixed> $extra
+     * @param array{xulieta: array{parser: string, validator: string}} $extra
      *
      * @return array<string,mixed>
      */
     private static function getExtraMetadata(array $extra): array
     {
-        $xulietaPluginConfiguration = [];
+        $pluginConfiguration = [];
 
         if (isset($extra['xulieta']) && is_array($extra['xulieta'])) {
-            /** @var array<string,mixed> $xulietaPluginConfiguration */
-            $xulietaPluginConfiguration = $extra['xulieta'];
+            /** @var array<string,mixed> $pluginConfiguration */
+            $pluginConfiguration = $extra['xulieta'];
         }
 
-        return $xulietaPluginConfiguration;
+        return $pluginConfiguration;
     }
 
     private static function injectModuleIntoConfig(array $extra, IOInterface $io, Composer $composer): void
@@ -149,6 +151,7 @@ final class Register implements PluginInterface, EventSubscriberInterface
         $io->write('Updating file...');
     }
 
+    /** @psalm-return array{post-package-install: string} */
     public static function getSubscribedEvents(): array
     {
         return [PackageEvents::POST_PACKAGE_INSTALL => 'onPostPackageInstall'];
