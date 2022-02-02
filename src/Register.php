@@ -13,6 +13,7 @@ use Composer\IO\IOInterface;
 use Composer\Plugin\PluginInterface;
 use DOMDocument;
 use DOMElement;
+use DOMException;
 use Symfony\Component\Config\Util\XmlUtils;
 
 use function assert;
@@ -72,7 +73,7 @@ final class Register implements PluginInterface, EventSubscriberInterface
     /**
      * Retrieve the metadata from the "extra" section
      *
-     * @param array{xulieta: array{parser: string, validator: string}} $extra
+     * @param array{xulieta?: object|array{parser?: string, validator?: string}} $extra
      *
      * @return array<string,mixed>
      */
@@ -91,55 +92,20 @@ final class Register implements PluginInterface, EventSubscriberInterface
     private static function injectModuleIntoConfig(array $extra, IOInterface $io, Composer $composer): void
     {
         $rootDir           = dirname($composer->getConfig()->getConfigSource()->getName());
-        $xulietaConfigFile = $rootDir . '/xulieta.xml';
+        $xulietaConfigFile = $readFile = $rootDir . '/xulieta.xml';
 
-        // @todo create basic config file in case it doesn't exists?
         if (! file_exists($xulietaConfigFile)) {
-            return;
-        }
-
-        // FIXME: Filter elements so it doesn't get repeated
-        $xml  = XmlUtils::loadFile($xulietaConfigFile);
-        $root = $xml->documentElement;
-
-        $parsers = $root->getElementsByTagName('parser');
-        $a       = [];
-        foreach ($parsers->getIterator() as $registeredParsers) {
-            assert($registeredParsers instanceof DOMElement);
-            $a[] = $registeredParsers->textContent;
-        }
-
-        // @todo refactor to functional
-        foreach ($extra['parser'] as $toBeRegistered) {
-            if (in_array($toBeRegistered, $a, true)) {
-                continue;
+            if (! $io->askConfirmation('Do you want us to create a xulieta.xml for you? ')) {
+                return;
             }
 
-            $registeredParsers?->parentNode?->insertBefore(
-                $xml->createElement('parser', $toBeRegistered),
-                $registeredParsers ?? null
-            );
+            $readFile = __DIR__ . '/../default-config.xml.dist';
         }
 
-        $validators = $root->getElementsByTagName('validator');
-        $b          = [];
+        $xml = XmlUtils::loadFile($readFile);
 
-        foreach ($validators->getIterator() as $registeredValidators) {
-            assert($registeredValidators instanceof DOMElement);
-            $b[] = $registeredValidators->textContent;
-        }
-
-        // @todo poorly duplicated code
-        foreach ($extra['validator'] as $toBeRegistered) {
-            if (in_array($toBeRegistered, $b, true)) {
-                continue;
-            }
-
-            $registeredValidators->parentNode->insertBefore(
-                $xml->createElement('validator', $toBeRegistered),
-                $registeredValidators ?? null
-            );
-        }
+        self::appendChild($xml, $extra, 'parser');
+        self::appendChild($xml, $extra, 'validator');
 
         // @fixme: workaround to save properly formatted xml
         $domxml                     = new DOMDocument('1.0');
@@ -148,7 +114,44 @@ final class Register implements PluginInterface, EventSubscriberInterface
         $domxml->loadXML($xml->saveXML());
         $domxml->save($xulietaConfigFile);
 
-        $io->write('Updating file...');
+        $io->write('Xulieta configuration is up-to-date...');
+    }
+
+    /** @throws DOMException */
+    private static function appendChild(DOMDocument $document, array $extra, string $tag): void
+    {
+        /** @var DOMElement $root */
+        $root = $document->documentElement;
+
+        $validators = $root->getElementsByTagName($tag);
+        $b          = [];
+
+        foreach ($validators->getIterator() as $taggedElements) {
+            assert($taggedElements instanceof DOMElement);
+            $b[] = $taggedElements->textContent;
+        }
+
+        if (! isset($extra[$tag])) {
+            return;
+        }
+
+        /** @var string $toBeRegistered */
+        foreach ($extra[$tag] as $toBeRegistered) {
+            if (in_array($toBeRegistered, $b, true)) {
+                continue;
+            }
+
+            if (! isset($taggedElements)) {
+                $root->append($document->createElement($tag, $toBeRegistered));
+
+                continue;
+            }
+
+            $taggedElements?->parentNode?->insertBefore(
+                $document->createElement($tag, $toBeRegistered),
+                $taggedElements
+            );
+        }
     }
 
     /** @psalm-return array{post-package-install: string} */
