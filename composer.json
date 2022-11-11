@@ -20,7 +20,7 @@
     "symfony/config": "^v5.4.3"
   },
   "require-dev": {
-    "doctrine/coding-standard": "^9.0.0",
+    "doctrine/coding-standard": "^10.0.0",
     "malukenho/mcbumpface": "^1.1.5",
     "roave/security-advisories": "dev-latest",
     "vimeo/psalm": "^4.19.0"
