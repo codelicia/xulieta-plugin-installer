@@ -17,7 +17,7 @@
     "php": ">=8.0",
     "ext-dom": "*",
     "composer/composer": "^2.2.5",
-    "symfony/config": "^v6.0.0"
+    "symfony/config": "^v7.0.0"
   },
   "require-dev": {
     "doctrine/coding-standard": "^12.0.0",
